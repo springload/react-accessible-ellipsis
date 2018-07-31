@@ -19,6 +19,6 @@ Put `<Ellipsis>` tags around your text, and ensure that it's only used within a 
 
     import Ellipsis from 'react-accessible-ellipsis';
 
-    export default () => {
+    export default () => (
       <Ellipsis> any text you want </Ellipsis>
-    }
+    )
