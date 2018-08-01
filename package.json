@@ -1,0 +1,67 @@
+{
+  "name": "react-accessible-ellipsis",
+  "version": "0.0.1",
+  "description": "Visibily truncate multiline text with an ellipsis... without causing accessibility problems! ",
+  "main": "./build/index.js",
+  "scripts": {
+    "build": "babel src --out-file build/index.js",
+    "prepublishOnly": "npm run build",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/springload/react-accessible-ellipsis/"
+  },
+  "keywords": [
+    "ellipsis",
+    "dotdotdot",
+    "dot dot dot",
+    "truncate",
+    "overflow",
+    "accessibility",
+    "a11y",
+    "react",
+    "text-overflow"
+  ],
+  "author": "Matthew Holloway",
+  "license": "ISC",
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-preset-env": "^1.6.0",
+    "babel-preset-flow": "^6.23.0",
+    "babel-preset-react": "^6.24.1",
+    "babel-register": "^6.26.0",
+    "benchmark": "^2.1.4",
+    "jest": "^21.0.2",
+    "memwatch-next": "^0.3.0",
+    "react": ">15",
+    "react-test-renderer": ">15"
+  },
+  "peerDependencies": {
+    "react": ">15"
+  },
+  "babel": {
+    "presets": [
+      "flow",
+      [
+        "env",
+        {
+          "targets": {
+            "node": "3"
+          }
+        }
+      ],
+      "react"
+    ],
+    "plugins": [
+      [
+        "transform-react-jsx"
+      ],
+      [
+        "transform-object-rest-spread"
+      ]
+    ]
+  }
+}
