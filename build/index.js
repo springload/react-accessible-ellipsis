@@ -127,7 +127,7 @@ var Ellipsis = function (_Component) {
         return children;
       }
       return React.createElement(
-        React.Fragment,
+        _react.Fragment,
         null,
         children.substr(0, offset),
         React.createElement(

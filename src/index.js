@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component, Fragment } from "react";
 
 export default class Ellipsis extends Component {
   constructor(props) {
@@ -104,7 +104,7 @@ export default class Ellipsis extends Component {
       return children;
     }
     return (
-      <React.Fragment>
+      <Fragment>
         {children.substr(0, offset)}
         <span
           ref={ellipsisNode => {
@@ -115,7 +115,7 @@ export default class Ellipsis extends Component {
           {this.props.ellipsis || "\u2026"}
         </span>
         {children.substr(offset)}
-      </React.Fragment>
+      </Fragment>
     );
   }
 }
