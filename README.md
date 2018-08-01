@@ -9,6 +9,9 @@ For visual reasons it can be informative to show that text has been truncated wi
 
 However browser support for `text-overflow:ellipsis` is poor, especially on multiline text.
 
+    It was the best of times, it was the worst of
+    times, it was the age of wisdom, it was the...
+
 There are a variety of JavaScript-based solutions that aim to solve this but they either have poor accessibility or poor browser support, or they require `text-align: justify`.
 
 * **Better accessibility** CSS `text-overflow:ellipsis` does not affect whether screenreaders have their text truncated and neither should a JavaScript approach. Most alternatives truncate the sentence which may make for nonsensical text being read to screen reader users. The ellipsis is visual decoration and that's it.
