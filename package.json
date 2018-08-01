@@ -1,6 +1,6 @@
 {
   "name": "react-accessible-ellipsis",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "Visibily truncate multiline text with an ellipsis... without causing accessibility problems!",
   "main": "./build/index.js",
   "scripts": {
