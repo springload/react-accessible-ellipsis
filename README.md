@@ -18,8 +18,9 @@ There are a variety of JavaScript-based solutions that aim to solve this but the
 - **Better accessibility:** CSS `text-overflow:ellipsis` does not truncate the text that screenreaders speak and neither should a JavaScript approach, because the placement is "..." is visual-only and stopping speaking mid-sentence may be confusing to screenreader users. The ellipsis is visual decoration and that's it.
 - **Better browser support:** this is a JavaScript solution that works everywhere React does.
 - **Arbitrary alignment:** this doesn't require `text-align: justify` and works with any text or font (variable width or fixed etc.).
+- **Tiny dependency:** 2kb (minified and gzipped)
 
-Please note that it only supports plaintext though, not HTML (the `children` node should just be plaintext).
+Please note that it only supports plaintext though, not HTML (the `children` node should just be one text node).
 
 ## Install
 
@@ -42,3 +43,17 @@ or,
     export default () => (
       <Ellipsis className="some-class-with-height"> any text you want lorem ipsum etc. </Ellipsis>
     )
+
+## Troubleshooting
+
+### Console error about `children.split` is not a function
+
+This gruesome sounding error means that you have multiple `children` nodes being passed to react-accessible-ellipsis. Try joining them to a single string.. for example, rather than
+
+    <Ellipsis>{propText} some description {moreText}</Ellipsis>
+
+try passing in,
+
+    <Ellipsis>{\`${propText} some description ${moreText}\`}</Ellipsis>
+
+(those are backticks as [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)).
