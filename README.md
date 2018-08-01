@@ -48,12 +48,12 @@ or,
 
 ### Console error about `children.split` is not a function
 
-This gruesome sounding error means that you have multiple `children` nodes being passed to react-accessible-ellipsis. Try joining them to a single string.. for example, rather than
+This gruesome sounding error means that you have multiple `children` nodes being passed to react-accessible-ellipsis, or non-plaintext children. Try joining them into a single string.. for example, rather than
 
     <Ellipsis>{propText} some description {moreText}</Ellipsis>
 
 try passing in,
 
-    <Ellipsis>{\`${propText} some description ${moreText}\`}</Ellipsis>
+    <Ellipsis>{`${propText} some description ${moreText}`}</Ellipsis>
 
-(those are backticks as [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals)).
+(those are backticks aka [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals))
