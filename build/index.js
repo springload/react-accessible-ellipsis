@@ -20,6 +20,8 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+var DEFAULT_ELLIPSIS = "\u2026";
+
 var Ellipsis = function (_React$Component) {
   _inherits(Ellipsis, _React$Component);
 
@@ -28,10 +30,13 @@ var Ellipsis = function (_React$Component) {
 
     var _this = _possibleConstructorReturn(this, (Ellipsis.__proto__ || Object.getPrototypeOf(Ellipsis)).call(this, props));
 
-    _this.state = {};
     _this.reflowEllipsis = _this.reflowEllipsis.bind(_this);
     _this.renderEllipsisAt = _this.renderEllipsisAt.bind(_this);
     _this.moveEllipsis = _this.moveEllipsis.bind(_this);
+
+    _this.ellipsisNode = document.createElement("span");
+    _this.ellipsisNode.setAttribute("aria-hidden", true);
+    _this.ellipsisNode.textContent = _this.props.ellipsis || DEFAULT_ELLIPSIS;
     return _this;
   }
 
@@ -49,11 +54,18 @@ var Ellipsis = function (_React$Component) {
       window.removeEventListener("orientationchange", this.reflowEllipsis);
     }
   }, {
+    key: "shouldComponentUpdate",
+    value: function shouldComponentUpdate(nextProps) {
+      return nextProps.children !== this.props.children;
+    }
+  }, {
     key: "reflowEllipsis",
     value: function reflowEllipsis() {
-      this.setState({
-        offset: this.props.children.length
-      });
+      if (this.ellipsisNode.parentNode) {
+        this.containerNode.removeChild(this.ellipsisNode);
+      }
+      this.offset = this.props.children.length;
+      this.moveEllipsis();
     }
   }, {
     key: "moveEllipsis",
@@ -68,7 +80,7 @@ var Ellipsis = function (_React$Component) {
         // then just exit
         return;
       }
-      if (this.ellipsisNode) {
+      if (this.ellipsisNode && this.ellipsisNode.parentNode) {
         // because any character's height will include descenders (y how the tail goes below the line) to the
         // tallest letter, but an ellipsis is somewhere in the middle so we don't care if the descender area
         // is covered.
@@ -83,13 +95,31 @@ var Ellipsis = function (_React$Component) {
           return;
         }
       }
-      var offset = this.state.offset || this.props.children.length;
+      var offset = this.offset || this.props.children.length;
       var reverseChildren = this.props.children.split("").reverse().join("");
       var newOffsetIndexOf = reverseChildren.indexOf(" ", reverseChildren.length - offset + 1);
 
       var newOffset = newOffsetIndexOf !== -1 ? reverseChildren.length - newOffsetIndexOf - 1 : undefined;
 
-      this.setState({ offset: newOffset });
+      this.offset = newOffset;
+      this.renderEllipsisAt(this.offset);
+      requestAnimationFrame(this.moveEllipsis);
+    }
+  }, {
+    key: "renderEllipsisAt",
+    value: function renderEllipsisAt(offset) {
+      if (offset === undefined || offset === this.props.children.length) {
+        this.containerNode.innerText = this.props.children;
+        return;
+      }
+
+      while (this.containerNode.firstChild) {
+        this.containerNode.removeChild(this.containerNode.firstChild);
+      }
+
+      this.containerNode.appendChild(document.createTextNode(this.props.children.substr(0, offset)));
+      this.containerNode.appendChild(this.ellipsisNode);
+      this.containerNode.appendChild(document.createTextNode(this.props.children.substr(offset)));
     }
   }, {
     key: "render",
@@ -100,10 +130,9 @@ var Ellipsis = function (_React$Component) {
           children = _props.children,
           className = _props.className,
           style = _props.style;
-      var offset = this.state.offset;
 
 
-      if (offset !== undefined) {
+      if (this.offset !== undefined) {
         requestAnimationFrame(this.moveEllipsis);
       }
 
@@ -116,35 +145,9 @@ var Ellipsis = function (_React$Component) {
           className: className,
           style: _extends({
             position: "relative", // needed to calculate location of child nodes
-            overflow: "hidden"
-          }, style)
+            overflow: "hidden" }, style)
         },
-        this.renderEllipsisAt(children, offset)
-      );
-    }
-  }, {
-    key: "renderEllipsisAt",
-    value: function renderEllipsisAt(children, offset) {
-      var _this3 = this;
-
-      if (offset === undefined || offset === children.length) {
-        return children;
-      }
-      return _react2.default.createElement(
-        _react2.default.Fragment,
-        null,
-        children.substr(0, offset),
-        _react2.default.createElement(
-          "span",
-          {
-            ref: function ref(ellipsisNode) {
-              _this3.ellipsisNode = ellipsisNode;
-            },
-            "aria-hidden": true
-          },
-          this.props.ellipsis || "\u2026"
-        ),
-        children.substr(offset)
+        children
       );
     }
   }]);

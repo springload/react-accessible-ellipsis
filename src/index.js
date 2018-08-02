@@ -1,12 +1,17 @@
 import React from "react";
 
+const DEFAULT_ELLIPSIS = "\u2026";
+
 export default class Ellipsis extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {};
     this.reflowEllipsis = this.reflowEllipsis.bind(this);
     this.renderEllipsisAt = this.renderEllipsisAt.bind(this);
     this.moveEllipsis = this.moveEllipsis.bind(this);
+
+    this.ellipsisNode = document.createElement("span");
+    this.ellipsisNode.setAttribute("aria-hidden", true);
+    this.ellipsisNode.textContent = this.props.ellipsis || DEFAULT_ELLIPSIS;
   }
 
   componentDidMount() {
@@ -20,10 +25,16 @@ export default class Ellipsis extends React.Component {
     window.removeEventListener("orientationchange", this.reflowEllipsis);
   }
 
+  shouldComponentUpdate(nextProps) {
+    return nextProps.children !== this.props.children;
+  }
+
   reflowEllipsis() {
-    this.setState({
-      offset: this.props.children.length
-    });
+    if (this.ellipsisNode.parentNode) {
+      this.containerNode.removeChild(this.ellipsisNode);
+    }
+    this.offset = this.props.children.length;
+    this.moveEllipsis();
   }
 
   moveEllipsis() {
@@ -39,7 +50,7 @@ export default class Ellipsis extends React.Component {
       // then just exit
       return;
     }
-    if (this.ellipsisNode) {
+    if (this.ellipsisNode && this.ellipsisNode.parentNode) {
       // because any character's height will include descenders (y how the tail goes below the line) to the
       // tallest letter, but an ellipsis is somewhere in the middle so we don't care if the descender area
       // is covered.
@@ -56,7 +67,7 @@ export default class Ellipsis extends React.Component {
         return;
       }
     }
-    const offset = this.state.offset || this.props.children.length;
+    const offset = this.offset || this.props.children.length;
     const reverseChildren = this.props.children
       .split("")
       .reverse()
@@ -71,14 +82,34 @@ export default class Ellipsis extends React.Component {
         ? reverseChildren.length - newOffsetIndexOf - 1
         : undefined;
 
-    this.setState({ offset: newOffset });
+    this.offset = newOffset;
+    this.renderEllipsisAt(this.offset);
+    requestAnimationFrame(this.moveEllipsis);
+  }
+
+  renderEllipsisAt(offset) {
+    if (offset === undefined || offset === this.props.children.length) {
+      this.containerNode.innerText = this.props.children;
+      return;
+    }
+
+    while (this.containerNode.firstChild) {
+      this.containerNode.removeChild(this.containerNode.firstChild);
+    }
+
+    this.containerNode.appendChild(
+      document.createTextNode(this.props.children.substr(0, offset))
+    );
+    this.containerNode.appendChild(this.ellipsisNode);
+    this.containerNode.appendChild(
+      document.createTextNode(this.props.children.substr(offset))
+    );
   }
 
   render() {
     const { children, className, style } = this.props;
-    const { offset } = this.state;
 
-    if (offset !== undefined) {
+    if (this.offset !== undefined) {
       requestAnimationFrame(this.moveEllipsis);
     }
 
@@ -90,32 +121,12 @@ export default class Ellipsis extends React.Component {
         className={className}
         style={{
           position: "relative", // needed to calculate location of child nodes
-          overflow: "hidden",
+          overflow: "hidden", // they can always override this with style if they have any niche use-cases for ellipsis and overflow: 'visible'
           ...style
         }}
       >
-        {this.renderEllipsisAt(children, offset)}
+        {children}
       </div>
-    );
-  }
-
-  renderEllipsisAt(children, offset) {
-    if (offset === undefined || offset === children.length) {
-      return children;
-    }
-    return (
-      <React.Fragment>
-        {children.substr(0, offset)}
-        <span
-          ref={ellipsisNode => {
-            this.ellipsisNode = ellipsisNode;
-          }}
-          aria-hidden
-        >
-          {this.props.ellipsis || "\u2026"}
-        </span>
-        {children.substr(offset)}
-      </React.Fragment>
     );
   }
 }

@@ -15,8 +15,10 @@ However browser support for `text-overflow:ellipsis` is poor, especially on mult
 
 There are a variety of JavaScript-based solutions that aim to solve this but they either have poor accessibility or poor browser support, or they require `text-align: justify`.
 
+`react-accessible-ellipsis` has
+
 - **Better accessibility:** CSS `text-overflow:ellipsis` does not truncate the text that screenreaders speak and neither should a JavaScript approach, because the placement is "..." is visual-only and stopping speaking mid-sentence may be confusing to screenreader users. The ellipsis is visual decoration and that's it.
-- **Better browser support:** this is a JavaScript solution that works everywhere React does.
+- **Better browser support than `text-overflow:ellipsis`:** this is a JavaScript solution that works everywhere React does.
 - **Arbitrary alignment:** this doesn't require `text-align: justify` and works with any text or font (variable width or fixed etc.).
 - **Tiny dependency:** 2kb (minified and gzipped)
 
@@ -57,3 +59,7 @@ try passing in,
     <Ellipsis>{`${propText} some description ${moreText}`}</Ellipsis>
 
 (those are backticks aka [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals))
+
+### `requestAnimationFrame` is undefined or not a function
+
+You'll need a polyfill.
