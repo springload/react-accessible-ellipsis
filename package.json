@@ -1,6 +1,6 @@
 {
   "name": "react-accessible-ellipsis",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Visibily truncate multiline text with an ellipsis... without causing accessibility problems!",
   "main": "./build/index.js",
   "scripts": {
@@ -21,7 +21,8 @@
     "accessibility",
     "a11y",
     "react",
-    "text-overflow"
+    "text-overflow",
+    "ie11"
   ],
   "author": "Matthew Holloway",
   "license": "ISC",

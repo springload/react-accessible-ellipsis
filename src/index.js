@@ -1,6 +1,7 @@
 import React from "react";
 
 const DEFAULT_ELLIPSIS = "\u2026";
+const NBSP = "\u00A0";
 
 export default class Ellipsis extends React.Component {
   constructor(props) {
@@ -12,6 +13,10 @@ export default class Ellipsis extends React.Component {
     this.ellipsisNode = document.createElement("span");
     this.ellipsisNode.setAttribute("aria-hidden", true);
     this.ellipsisNode.textContent = this.props.ellipsis || DEFAULT_ELLIPSIS;
+    this.whitespaceNode = document.createElement("div");
+    this.whitespaceNode.textContent = NBSP;
+    this.whitespaceNode.style.height = "100px";
+    this.whitespaceNode.style.width = "100%";
   }
 
   componentDidMount() {
@@ -32,12 +37,16 @@ export default class Ellipsis extends React.Component {
   reflowEllipsis() {
     if (this.ellipsisNode.parentNode) {
       this.containerNode.removeChild(this.ellipsisNode);
+      this.ellipsisNode = null;
     }
     this.offset = this.props.children.length;
     this.moveEllipsis();
   }
 
   moveEllipsis() {
+    if (!this.containerNode || this.containerNode.scrollHeight === undefined) {
+      return;
+    }
     const PIXEL_ROUNDING_BUFFER = 1;
     const viewableDifference = Math.abs(
       (this.containerNode.scrollHeight - this.containerNode.clientHeight) / 2
@@ -50,7 +59,7 @@ export default class Ellipsis extends React.Component {
       // then just exit
       return;
     }
-    if (this.ellipsisNode && this.ellipsisNode.parentNode) {
+    if (this.ellipsisNode) {
       // because any character's height will include descenders (y how the tail goes below the line) to the
       // tallest letter, but an ellipsis is somewhere in the middle so we don't care if the descender area
       // is covered.
@@ -67,7 +76,7 @@ export default class Ellipsis extends React.Component {
         return;
       }
     }
-    const offset = this.offset || this.props.children.length;
+    const offset = this.offset;
     const reverseChildren = this.props.children
       .split("")
       .reverse()
@@ -84,7 +93,7 @@ export default class Ellipsis extends React.Component {
 
     this.offset = newOffset;
     this.renderEllipsisAt(this.offset);
-    requestAnimationFrame(this.moveEllipsis);
+    setTimeout(this.moveEllipsis, 2000);
   }
 
   renderEllipsisAt(offset) {
@@ -101,6 +110,7 @@ export default class Ellipsis extends React.Component {
       document.createTextNode(this.props.children.substr(0, offset))
     );
     this.containerNode.appendChild(this.ellipsisNode);
+    this.containerNode.appendChild(this.whitespaceNode);
     this.containerNode.appendChild(
       document.createTextNode(this.props.children.substr(offset))
     );
