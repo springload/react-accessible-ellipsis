@@ -21,7 +21,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var DEFAULT_ELLIPSIS = "\u2026";
-var NBSP = "\xA0";
+var PIXEL_ROUNDING_BUFFER = 1;
 
 var Ellipsis = function (_React$Component) {
   _inherits(Ellipsis, _React$Component);
@@ -37,17 +37,16 @@ var Ellipsis = function (_React$Component) {
 
     _this.ellipsisNode = document.createElement("span");
     _this.ellipsisNode.setAttribute("aria-hidden", true);
+    _this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
+    _this.ellipsisNode.setAttribute("unselectable", "on"); // IE < 10 and Opera < 15 https://stackoverflow.com/a/4358620
     _this.ellipsisNode.textContent = _this.props.ellipsis || DEFAULT_ELLIPSIS;
-    _this.whitespaceNode = document.createElement("div");
-    _this.whitespaceNode.textContent = NBSP;
-    _this.whitespaceNode.style.height = "100px";
-    _this.whitespaceNode.style.width = "100%";
     return _this;
   }
 
   _createClass(Ellipsis, [{
     key: "componentDidMount",
     value: function componentDidMount() {
+      this.mounted = true;
       this.reflowEllipsis();
       window.addEventListener("resize", this.reflowEllipsis);
       window.addEventListener("orientationchange", this.reflowEllipsis);
@@ -55,6 +54,7 @@ var Ellipsis = function (_React$Component) {
   }, {
     key: "componentWillUnmount",
     value: function componentWillUnmount() {
+      this.mounted = false;
       window.removeEventListener("resize", this.reflowEllipsis);
       window.removeEventListener("orientationchange", this.reflowEllipsis);
     }
@@ -68,18 +68,24 @@ var Ellipsis = function (_React$Component) {
     value: function reflowEllipsis() {
       if (this.ellipsisNode.parentNode) {
         this.containerNode.removeChild(this.ellipsisNode);
-        this.ellipsisNode = null;
+      }
+      if (this.timer) {
+        clearTimeout(this.timer);
       }
       this.offset = this.props.children.length;
+      this.containerNode.textContent = this.props.children;
       this.moveEllipsis();
     }
   }, {
     key: "moveEllipsis",
     value: function moveEllipsis() {
-      if (!this.containerNode || this.containerNode.scrollHeight === undefined) {
+      if (!this.containerNode) {
+        if (this.mounted) {
+          this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
+        }
         return;
       }
-      var PIXEL_ROUNDING_BUFFER = 1;
+
       var viewableDifference = Math.abs((this.containerNode.scrollHeight - this.containerNode.clientHeight) / 2);
       // testing this rather that whether there's a height because any set height may be
       // enough to contain the element, so really we need to check whether the element is
@@ -89,7 +95,7 @@ var Ellipsis = function (_React$Component) {
         // then just exit
         return;
       }
-      if (this.ellipsisNode) {
+      if (this.ellipsisNode && this.ellipsisNode.parentNode) {
         // because any character's height will include descenders (y how the tail goes below the line) to the
         // tallest letter, but an ellipsis is somewhere in the middle so we don't care if the descender area
         // is covered.
@@ -104,7 +110,7 @@ var Ellipsis = function (_React$Component) {
           return;
         }
       }
-      var offset = this.offset;
+      var offset = this.offset || this.props.children.length;
       var reverseChildren = this.props.children.split("").reverse().join("");
       var newOffsetIndexOf = reverseChildren.indexOf(" ", reverseChildren.length - offset + 1);
 
@@ -112,7 +118,7 @@ var Ellipsis = function (_React$Component) {
 
       this.offset = newOffset;
       this.renderEllipsisAt(this.offset);
-      setTimeout(this.moveEllipsis, 2000);
+      this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
     }
   }, {
     key: "renderEllipsisAt",
@@ -128,7 +134,6 @@ var Ellipsis = function (_React$Component) {
 
       this.containerNode.appendChild(document.createTextNode(this.props.children.substr(0, offset)));
       this.containerNode.appendChild(this.ellipsisNode);
-      this.containerNode.appendChild(this.whitespaceNode);
       this.containerNode.appendChild(document.createTextNode(this.props.children.substr(offset)));
     }
   }, {
@@ -143,7 +148,8 @@ var Ellipsis = function (_React$Component) {
 
 
       if (this.offset !== undefined) {
-        requestAnimationFrame(this.moveEllipsis);
+        if (this.timer) clearTimeout(this.timer);
+        this.timer = setTimeout(this.reflowEllipsis, 1000 / 60);
       }
 
       return _react2.default.createElement(

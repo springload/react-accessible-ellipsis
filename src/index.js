@@ -1,7 +1,7 @@
 import React from "react";
 
 const DEFAULT_ELLIPSIS = "\u2026";
-const NBSP = "\u00A0";
+const PIXEL_ROUNDING_BUFFER = 1;
 
 export default class Ellipsis extends React.Component {
   constructor(props) {
@@ -12,20 +12,20 @@ export default class Ellipsis extends React.Component {
 
     this.ellipsisNode = document.createElement("span");
     this.ellipsisNode.setAttribute("aria-hidden", true);
+    this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
+    this.ellipsisNode.setAttribute("unselectable", "on"); // IE < 10 and Opera < 15 https://stackoverflow.com/a/4358620
     this.ellipsisNode.textContent = this.props.ellipsis || DEFAULT_ELLIPSIS;
-    this.whitespaceNode = document.createElement("div");
-    this.whitespaceNode.textContent = NBSP;
-    this.whitespaceNode.style.height = "100px";
-    this.whitespaceNode.style.width = "100%";
   }
 
   componentDidMount() {
+    this.mounted = true;
     this.reflowEllipsis();
     window.addEventListener("resize", this.reflowEllipsis);
     window.addEventListener("orientationchange", this.reflowEllipsis);
   }
 
   componentWillUnmount() {
+    this.mounted = false;
     window.removeEventListener("resize", this.reflowEllipsis);
     window.removeEventListener("orientationchange", this.reflowEllipsis);
   }
@@ -37,17 +37,23 @@ export default class Ellipsis extends React.Component {
   reflowEllipsis() {
     if (this.ellipsisNode.parentNode) {
       this.containerNode.removeChild(this.ellipsisNode);
-      this.ellipsisNode = null;
+    }
+    if (this.timer) {
+      clearTimeout(this.timer);
     }
     this.offset = this.props.children.length;
+    this.containerNode.textContent = this.props.children;
     this.moveEllipsis();
   }
 
   moveEllipsis() {
-    if (!this.containerNode || this.containerNode.scrollHeight === undefined) {
+    if (!this.containerNode) {
+      if (this.mounted) {
+        this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
+      }
       return;
     }
-    const PIXEL_ROUNDING_BUFFER = 1;
+
     const viewableDifference = Math.abs(
       (this.containerNode.scrollHeight - this.containerNode.clientHeight) / 2
     );
@@ -59,7 +65,7 @@ export default class Ellipsis extends React.Component {
       // then just exit
       return;
     }
-    if (this.ellipsisNode) {
+    if (this.ellipsisNode && this.ellipsisNode.parentNode) {
       // because any character's height will include descenders (y how the tail goes below the line) to the
       // tallest letter, but an ellipsis is somewhere in the middle so we don't care if the descender area
       // is covered.
@@ -76,7 +82,7 @@ export default class Ellipsis extends React.Component {
         return;
       }
     }
-    const offset = this.offset;
+    const offset = this.offset || this.props.children.length;
     const reverseChildren = this.props.children
       .split("")
       .reverse()
@@ -93,7 +99,7 @@ export default class Ellipsis extends React.Component {
 
     this.offset = newOffset;
     this.renderEllipsisAt(this.offset);
-    setTimeout(this.moveEllipsis, 2000);
+    this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
   }
 
   renderEllipsisAt(offset) {
@@ -110,7 +116,6 @@ export default class Ellipsis extends React.Component {
       document.createTextNode(this.props.children.substr(0, offset))
     );
     this.containerNode.appendChild(this.ellipsisNode);
-    this.containerNode.appendChild(this.whitespaceNode);
     this.containerNode.appendChild(
       document.createTextNode(this.props.children.substr(offset))
     );
@@ -120,7 +125,8 @@ export default class Ellipsis extends React.Component {
     const { children, className, style } = this.props;
 
     if (this.offset !== undefined) {
-      requestAnimationFrame(this.moveEllipsis);
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(this.reflowEllipsis, 1000 / 60);
     }
 
     return (
