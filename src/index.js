@@ -1,15 +1,17 @@
 import React from "react";
 
 const DEFAULT_ELLIPSIS = "\u2026";
-const PIXEL_ROUNDING_BUFFER = 1;
+const PIXEL_ROUNDING_BUFFER = 1.5; // Browsers sometimes calculate heights of DOM elements, or scrollHeight, by rounding up to nearest integer... so to compare for 'equality' we use this constant to find near numbers.
 
 export default class Ellipsis extends React.Component {
   constructor(props) {
     super(props);
-    this.reflowEllipsis = this.reflowEllipsis.bind(this);
+    this.reflowEllipsis = this.debounce(
+      this.reflowEllipsis.bind(this),
+      1000 / 60
+    );
     this.renderEllipsisAt = this.renderEllipsisAt.bind(this);
     this.moveEllipsis = this.moveEllipsis.bind(this);
-
     this.ellipsisNode = document.createElement("span");
     this.ellipsisNode.setAttribute("aria-hidden", true);
     this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
@@ -17,11 +19,37 @@ export default class Ellipsis extends React.Component {
     this.ellipsisNode.textContent = this.props.ellipsis || DEFAULT_ELLIPSIS;
   }
 
+  debounce(fn, delayMilliseconds) {
+    let timer;
+    return () => {
+      clearTimeout(timer);
+      timer = setTimeout(fn, delayMilliseconds);
+    };
+  }
+
   componentDidMount() {
     this.mounted = true;
-    this.reflowEllipsis();
     window.addEventListener("resize", this.reflowEllipsis);
     window.addEventListener("orientationchange", this.reflowEllipsis);
+
+    // Fonts may load later and affect ellipsis placement.
+    // This abandoned code might be useful in the future.
+    //
+    // import FontFaceObserver from 'font-face-observer';
+    // window
+    //   .getComputedStyle(this.containerNode)
+    //   .fontFamily // technically a font name could have "," in it.
+    //   // Eg
+    //   //    Verdana, "Tahoma (collapse, resonant)", Arial, sans-serif
+    //   // but seems so unlikely that we'll wait for the bug report before adding that parsing complexity
+    //   .split(',')
+    //   .forEach(fontName =>
+    //     new FontFaceObserver(fontName.replace(/^\s*"/, '').replace(/"\s*$/, ''))
+    //       .check()
+    //       .then(this.reflowEllipsis)
+    //   );
+
+    setTimeout(this.reflowEllipsis, 0);
   }
 
   componentWillUnmount() {
@@ -35,6 +63,7 @@ export default class Ellipsis extends React.Component {
   }
 
   reflowEllipsis() {
+    if (!this.mounted) return;
     if (this.ellipsisNode.parentNode) {
       this.containerNode.removeChild(this.ellipsisNode);
     }
@@ -48,10 +77,8 @@ export default class Ellipsis extends React.Component {
 
   moveEllipsis() {
     if (!this.containerNode) {
-      if (this.mounted) {
-        this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
-      }
-      return;
+      if (!this.mounted) return;
+      this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
     }
 
     const viewableDifference = Math.abs(

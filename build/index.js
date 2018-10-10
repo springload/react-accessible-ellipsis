@@ -21,7 +21,7 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var DEFAULT_ELLIPSIS = "\u2026";
-var PIXEL_ROUNDING_BUFFER = 1;
+var PIXEL_ROUNDING_BUFFER = 1.5; // Browsers sometimes calculate heights of DOM elements, or scrollHeight, by rounding up to nearest integer... so to compare for 'equality' we use this constant to find near numbers.
 
 var Ellipsis = function (_React$Component) {
   _inherits(Ellipsis, _React$Component);
@@ -31,10 +31,9 @@ var Ellipsis = function (_React$Component) {
 
     var _this = _possibleConstructorReturn(this, (Ellipsis.__proto__ || Object.getPrototypeOf(Ellipsis)).call(this, props));
 
-    _this.reflowEllipsis = _this.reflowEllipsis.bind(_this);
+    _this.reflowEllipsis = _this.debounce(_this.reflowEllipsis.bind(_this), 1000 / 60);
     _this.renderEllipsisAt = _this.renderEllipsisAt.bind(_this);
     _this.moveEllipsis = _this.moveEllipsis.bind(_this);
-
     _this.ellipsisNode = document.createElement("span");
     _this.ellipsisNode.setAttribute("aria-hidden", true);
     _this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
@@ -44,12 +43,39 @@ var Ellipsis = function (_React$Component) {
   }
 
   _createClass(Ellipsis, [{
+    key: "debounce",
+    value: function debounce(fn, delayMilliseconds) {
+      var timer = void 0;
+      return function () {
+        clearTimeout(timer);
+        timer = setTimeout(fn, delayMilliseconds);
+      };
+    }
+  }, {
     key: "componentDidMount",
     value: function componentDidMount() {
       this.mounted = true;
-      this.reflowEllipsis();
       window.addEventListener("resize", this.reflowEllipsis);
       window.addEventListener("orientationchange", this.reflowEllipsis);
+
+      // Fonts may load later and affect ellipsis placement.
+      // This abandoned code might be useful in the future.
+      //
+      // import FontFaceObserver from 'font-face-observer';
+      // window
+      //   .getComputedStyle(this.containerNode)
+      //   .fontFamily // technically a font name could have "," in it.
+      //   // Eg
+      //   //    Verdana, "Tahoma (collapse, resonant)", Arial, sans-serif
+      //   // but seems so unlikely that we'll wait for the bug report before adding that parsing complexity
+      //   .split(',')
+      //   .forEach(fontName =>
+      //     new FontFaceObserver(fontName.replace(/^\s*"/, '').replace(/"\s*$/, ''))
+      //       .check()
+      //       .then(this.reflowEllipsis)
+      //   );
+
+      setTimeout(this.reflowEllipsis, 0);
     }
   }, {
     key: "componentWillUnmount",
@@ -66,6 +92,7 @@ var Ellipsis = function (_React$Component) {
   }, {
     key: "reflowEllipsis",
     value: function reflowEllipsis() {
+      if (!this.mounted) return;
       if (this.ellipsisNode.parentNode) {
         this.containerNode.removeChild(this.ellipsisNode);
       }
@@ -80,10 +107,8 @@ var Ellipsis = function (_React$Component) {
     key: "moveEllipsis",
     value: function moveEllipsis() {
       if (!this.containerNode) {
-        if (this.mounted) {
-          this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
-        }
-        return;
+        if (!this.mounted) return;
+        this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
       }
 
       var viewableDifference = Math.abs((this.containerNode.scrollHeight - this.containerNode.clientHeight) / 2);
