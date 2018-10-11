@@ -20,8 +20,13 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
+// import FontFaceObserver from 'font-face-observer';
+
+var SIXTY_FPS = 1000 / 60;
 var DEFAULT_ELLIPSIS = "\u2026";
 var PIXEL_ROUNDING_BUFFER = 1.5; // Browsers sometimes calculate heights of DOM elements, or scrollHeight, by rounding up to nearest integer... so to compare for 'equality' we use this constant to find near numbers.
+var DEFAULT_MUTATION_WATCHER_MILLISECONDS = 15;
+var MAX_MUTATION_WATCHER_MILLISECONDS = 10000;
 
 var Ellipsis = function (_React$Component) {
   _inherits(Ellipsis, _React$Component);
@@ -31,7 +36,8 @@ var Ellipsis = function (_React$Component) {
 
     var _this = _possibleConstructorReturn(this, (Ellipsis.__proto__ || Object.getPrototypeOf(Ellipsis)).call(this, props));
 
-    _this.reflowEllipsis = _this.debounce(_this.reflowEllipsis.bind(_this), 1000 / 60);
+    _this.reflowEllipsis = _this.debounce(_this.reflowEllipsis.bind(_this), SIXTY_FPS);
+    _this.reflowIfSizeChange = _this.reflowIfSizeChange.bind(_this);
     _this.renderEllipsisAt = _this.renderEllipsisAt.bind(_this);
     _this.moveEllipsis = _this.moveEllipsis.bind(_this);
     _this.ellipsisNode = document.createElement("span");
@@ -39,6 +45,7 @@ var Ellipsis = function (_React$Component) {
     _this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
     _this.ellipsisNode.setAttribute("unselectable", "on"); // IE < 10 and Opera < 15 https://stackoverflow.com/a/4358620
     _this.ellipsisNode.textContent = _this.props.ellipsis || DEFAULT_ELLIPSIS;
+    _this.mutationWatcherMilliseconds = DEFAULT_MUTATION_WATCHER_MILLISECONDS;
     return _this;
   }
 
@@ -55,13 +62,12 @@ var Ellipsis = function (_React$Component) {
     key: "componentDidMount",
     value: function componentDidMount() {
       this.mounted = true;
+      this.containerScrollHeight = this.containerNode.scrollHeight;
       window.addEventListener("resize", this.reflowEllipsis);
       window.addEventListener("orientationchange", this.reflowEllipsis);
 
       // Fonts may load later and affect ellipsis placement.
       // This abandoned code might be useful in the future.
-      //
-      // import FontFaceObserver from 'font-face-observer';
       // window
       //   .getComputedStyle(this.containerNode)
       //   .fontFamily // technically a font name could have "," in it.
@@ -73,9 +79,9 @@ var Ellipsis = function (_React$Component) {
       //     new FontFaceObserver(fontName.replace(/^\s*"/, '').replace(/"\s*$/, ''))
       //       .check()
       //       .then(this.reflowEllipsis)
-      //   );
-
-      setTimeout(this.reflowEllipsis, 0);
+      //  );
+      this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
+      setTimeout(this.reflowIfSizeChange, this.mutationWatcherMilliseconds);
     }
   }, {
     key: "componentWillUnmount",
@@ -83,6 +89,33 @@ var Ellipsis = function (_React$Component) {
       this.mounted = false;
       window.removeEventListener("resize", this.reflowEllipsis);
       window.removeEventListener("orientationchange", this.reflowEllipsis);
+    }
+  }, {
+    key: "reflowIfSizeChange",
+    value: function reflowIfSizeChange() {
+      if (!this.mounted) return;
+      // Fonts loading can affect the correct ellipsis placement, yet it's hard to know if
+      // fonts changed or what font was used.
+      setTimeout(this.reflowIfSizeChange, this.mutationWatcherMilliseconds);
+      if (this.containerScrollHeight === this.containerNode.scrollHeight) {
+        this.mutationWatcherMilliseconds = this.mutationWatcherMilliseconds * (DEFAULT_MUTATION_WATCHER_MILLISECONDS / 10);
+        if (this.mutationWatcherMilliseconds > MAX_MUTATION_WATCHER_MILLISECONDS) {
+          this.mutationWatcherMilliseconds = MAX_MUTATION_WATCHER_MILLISECONDS;
+        }
+        // console.log('Same scroll height.', this.mutationWatcherMilliseconds);
+        return;
+      }
+      this.mutationWatcherMilliseconds = DEFAULT_MUTATION_WATCHER_MILLISECONDS;
+      // console.log(
+      //   'Scroll height change, so reflow',
+      //   this.containerScrollHeight,
+      //   'vs',
+      //   this.containerNode.scrollHeight,
+      //   this.mutationWatcherMilliseconds
+      // );
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
+      this.containerScrollHeight = this.containerNode.scrollHeight;
     }
   }, {
     key: "shouldComponentUpdate",
@@ -108,7 +141,7 @@ var Ellipsis = function (_React$Component) {
     value: function moveEllipsis() {
       if (!this.containerNode) {
         if (!this.mounted) return;
-        this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
+        this.timer = setTimeout(this.moveEllipsis, SIXTY_FPS);
       }
 
       var viewableDifference = Math.abs((this.containerNode.scrollHeight - this.containerNode.clientHeight) / 2);
@@ -143,7 +176,7 @@ var Ellipsis = function (_React$Component) {
 
       this.offset = newOffset;
       this.renderEllipsisAt(this.offset);
-      this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
+      this.timer = setTimeout(this.moveEllipsis, SIXTY_FPS);
     }
   }, {
     key: "renderEllipsisAt",
@@ -174,7 +207,7 @@ var Ellipsis = function (_React$Component) {
 
       if (this.offset !== undefined) {
         if (this.timer) clearTimeout(this.timer);
-        this.timer = setTimeout(this.reflowEllipsis, 1000 / 60);
+        this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
       }
 
       return _react2.default.createElement(

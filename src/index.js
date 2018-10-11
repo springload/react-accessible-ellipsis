@@ -1,15 +1,20 @@
 import React from "react";
+// import FontFaceObserver from 'font-face-observer';
 
+const SIXTY_FPS = 1000 / 60;
 const DEFAULT_ELLIPSIS = "\u2026";
 const PIXEL_ROUNDING_BUFFER = 1.5; // Browsers sometimes calculate heights of DOM elements, or scrollHeight, by rounding up to nearest integer... so to compare for 'equality' we use this constant to find near numbers.
+const DEFAULT_MUTATION_WATCHER_MILLISECONDS = 15;
+const MAX_MUTATION_WATCHER_MILLISECONDS = 10000;
 
 export default class Ellipsis extends React.Component {
   constructor(props) {
     super(props);
     this.reflowEllipsis = this.debounce(
       this.reflowEllipsis.bind(this),
-      1000 / 60
+      SIXTY_FPS
     );
+    this.reflowIfSizeChange = this.reflowIfSizeChange.bind(this);
     this.renderEllipsisAt = this.renderEllipsisAt.bind(this);
     this.moveEllipsis = this.moveEllipsis.bind(this);
     this.ellipsisNode = document.createElement("span");
@@ -17,6 +22,7 @@ export default class Ellipsis extends React.Component {
     this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
     this.ellipsisNode.setAttribute("unselectable", "on"); // IE < 10 and Opera < 15 https://stackoverflow.com/a/4358620
     this.ellipsisNode.textContent = this.props.ellipsis || DEFAULT_ELLIPSIS;
+    this.mutationWatcherMilliseconds = DEFAULT_MUTATION_WATCHER_MILLISECONDS;
   }
 
   debounce(fn, delayMilliseconds) {
@@ -29,13 +35,12 @@ export default class Ellipsis extends React.Component {
 
   componentDidMount() {
     this.mounted = true;
+    this.containerScrollHeight = this.containerNode.scrollHeight;
     window.addEventListener("resize", this.reflowEllipsis);
     window.addEventListener("orientationchange", this.reflowEllipsis);
 
     // Fonts may load later and affect ellipsis placement.
     // This abandoned code might be useful in the future.
-    //
-    // import FontFaceObserver from 'font-face-observer';
     // window
     //   .getComputedStyle(this.containerNode)
     //   .fontFamily // technically a font name could have "," in it.
@@ -47,15 +52,45 @@ export default class Ellipsis extends React.Component {
     //     new FontFaceObserver(fontName.replace(/^\s*"/, '').replace(/"\s*$/, ''))
     //       .check()
     //       .then(this.reflowEllipsis)
-    //   );
-
-    setTimeout(this.reflowEllipsis, 0);
+    //  );
+    this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
+    setTimeout(this.reflowIfSizeChange, this.mutationWatcherMilliseconds);
   }
 
   componentWillUnmount() {
     this.mounted = false;
     window.removeEventListener("resize", this.reflowEllipsis);
     window.removeEventListener("orientationchange", this.reflowEllipsis);
+  }
+
+  reflowIfSizeChange() {
+    if (!this.mounted) return;
+    // Fonts loading can affect the correct ellipsis placement, yet it's hard to know if
+    // fonts changed or what font was used.
+    setTimeout(this.reflowIfSizeChange, this.mutationWatcherMilliseconds);
+    if (this.containerScrollHeight === this.containerNode.scrollHeight) {
+      this.mutationWatcherMilliseconds =
+        this.mutationWatcherMilliseconds *
+        (DEFAULT_MUTATION_WATCHER_MILLISECONDS / 10);
+      if (
+        this.mutationWatcherMilliseconds > MAX_MUTATION_WATCHER_MILLISECONDS
+      ) {
+        this.mutationWatcherMilliseconds = MAX_MUTATION_WATCHER_MILLISECONDS;
+      }
+      // console.log('Same scroll height.', this.mutationWatcherMilliseconds);
+      return;
+    }
+    this.mutationWatcherMilliseconds = DEFAULT_MUTATION_WATCHER_MILLISECONDS;
+    // console.log(
+    //   'Scroll height change, so reflow',
+    //   this.containerScrollHeight,
+    //   'vs',
+    //   this.containerNode.scrollHeight,
+    //   this.mutationWatcherMilliseconds
+    // );
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
+    this.containerScrollHeight = this.containerNode.scrollHeight;
   }
 
   shouldComponentUpdate(nextProps) {
@@ -78,7 +113,7 @@ export default class Ellipsis extends React.Component {
   moveEllipsis() {
     if (!this.containerNode) {
       if (!this.mounted) return;
-      this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
+      this.timer = setTimeout(this.moveEllipsis, SIXTY_FPS);
     }
 
     const viewableDifference = Math.abs(
@@ -126,7 +161,7 @@ export default class Ellipsis extends React.Component {
 
     this.offset = newOffset;
     this.renderEllipsisAt(this.offset);
-    this.timer = setTimeout(this.moveEllipsis, 1000 / 60);
+    this.timer = setTimeout(this.moveEllipsis, SIXTY_FPS);
   }
 
   renderEllipsisAt(offset) {
@@ -153,7 +188,7 @@ export default class Ellipsis extends React.Component {
 
     if (this.offset !== undefined) {
       if (this.timer) clearTimeout(this.timer);
-      this.timer = setTimeout(this.reflowEllipsis, 1000 / 60);
+      this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
     }
 
     return (

@@ -6,12 +6,12 @@ Truncate multiline with an ellipsis... without causing accessibility problems!
 
 For visual reasons it can be informative to show that text has been truncated with an ellipsis character "..." such as
 
-    It was the best of times, it was the blurst of...
+    It was the best of times,...
 
 However browser support for `text-overflow:ellipsis` is poor, especially on multiline text.
 
-    It was the best of times, it was the blurst of
-    times, it was the age of wisdom, it was the...
+    It was the best of times,
+    it was the blurst of...
 
 There are a variety of JavaScript-based solutions that aim to solve this but they either have poor accessibility or poor browser support, or they require `text-align: justify`.
 
@@ -37,7 +37,7 @@ Put `<Ellipsis>` tags around your text, and ensure that it's only used within a 
     import Ellipsis from 'react-accessible-ellipsis';
 
     export default () => (
-      <Ellipsis style={{height: '2em' }}> any text you want lorem ipsum etc. </Ellipsis>
+      <Ellipsis style={{ height: '2em' }}> any text you want lorem ipsum etc. </Ellipsis>
     )
 
 or,
@@ -59,7 +59,3 @@ try passing in,
     <Ellipsis>{`${propText} some description ${moreText}`}</Ellipsis>
 
 (those are backticks aka [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals))
-
-### `requestAnimationFrame` is undefined or not a function
-
-You'll need a polyfill.
