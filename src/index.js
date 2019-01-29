@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment } from "react";
 // import FontFaceObserver from 'font-face-observer';
 
 const SIXTY_FPS = 1000 / 60;
@@ -14,6 +14,11 @@ export default class Ellipsis extends React.Component {
       this.reflowEllipsis.bind(this),
       SIXTY_FPS
     );
+    this.state = {
+      // needsTruncation: false,
+      showHideEnabled: false,
+      isOpen: !!this.props.openByDefault,
+    };
     this.reflowIfSizeChange = this.reflowIfSizeChange.bind(this);
     this.renderEllipsisAt = this.renderEllipsisAt.bind(this);
     this.moveEllipsis = this.moveEllipsis.bind(this);
@@ -93,8 +98,10 @@ export default class Ellipsis extends React.Component {
     this.containerScrollHeight = this.containerNode.scrollHeight;
   }
 
-  shouldComponentUpdate(nextProps) {
-    return nextProps.children !== this.props.children;
+  shouldComponentUpdate(nextProps, nextState) {
+    return (
+      nextProps.children !== this.props.children || nextState !== this.nextState
+    );
   }
 
   reflowEllipsis() {
@@ -183,8 +190,25 @@ export default class Ellipsis extends React.Component {
     );
   }
 
+  toggleOpenState = () => {
+    this.setState({ isOpen: !this.state.isOpen });
+  };
+
   render() {
-    const { children, className, style } = this.props;
+    const {
+      children,
+      className,
+      style,
+      customButton,
+      showToggleButton,
+      clickToToggle,
+      showMoreText,
+      showLessText,
+    } = this.props;
+
+    const { isOpen } = this.state;
+    const showMoreLabel = showMoreText || "Show more";
+    const showLessLabel = showLessText || "Show less";
 
     if (this.offset !== undefined) {
       if (this.timer) clearTimeout(this.timer);
@@ -192,19 +216,43 @@ export default class Ellipsis extends React.Component {
     }
 
     return (
-      <div
-        ref={containerNode => {
-          this.containerNode = containerNode;
-        }}
-        className={className}
-        style={{
-          position: "relative", // needed to calculate location of child nodes
-          overflow: "hidden", // they can always override this with style if they have any niche use-cases for ellipsis and overflow: 'visible'
-          ...style
-        }}
-      >
-        {children}
-      </div>
+      <Fragment>
+        <div
+          ref={containerNode => {
+            this.containerNode = containerNode;
+          }}
+          onClick={clickToToggle && this.toggleOpenState}
+          className={className}
+          style={{
+            position: "relative", // needed to calculate location of child nodes
+            overflow: isOpen ? "visible" : "hidden",
+            height: isOpen ? "auto" : null,
+            ...style,
+          }}
+        >
+          {children}
+        </div>
+
+        {showToggleButton && (
+          <Fragment>
+            {customButton ? (
+              customButton(
+                isOpen,
+                this.toggleOpenState,
+                showMoreText,
+                showLessText
+              )
+            ) : (
+              <button
+                onClick={this.toggleOpenState}
+                className="rae__toggle-btn"
+              >
+                {isOpen ? showLessLabel : showMoreLabel}
+              </button>
+            )}
+          </Fragment>
+        )}
+      </Fragment>
     );
   }
 }
