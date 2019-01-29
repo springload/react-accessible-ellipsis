@@ -246,6 +246,7 @@ export default class Ellipsis extends React.Component {
               <button
                 onClick={this.toggleOpenState}
                 className="rae__toggle-btn"
+                aria-hidden
               >
                 {isOpen ? showLessLabel : showMoreLabel}
               </button>
