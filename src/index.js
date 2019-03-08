@@ -3,22 +3,56 @@ import React, { Fragment } from "react";
 
 const SIXTY_FPS = 1000 / 60;
 const DEFAULT_ELLIPSIS = "\u2026";
+const DEFAULT_ELLIPSIS_CLASS = "rae-ellipsis";
 const PIXEL_ROUNDING_BUFFER = 1.5; // Browsers sometimes calculate heights of DOM elements, or scrollHeight, by rounding up to nearest integer... so to compare for 'equality' we use this constant to find near numbers.
 const DEFAULT_MUTATION_WATCHER_MILLISECONDS = 15;
 const MAX_MUTATION_WATCHER_MILLISECONDS = 10000;
 
+const EllipsisContext = React.createContext();
+
+export class EllipsisProvider extends React.Component {
+  state = {
+    isOpen: false,
+  };
+  render() {
+    return (
+      <EllipsisContext.Provider
+        value={{
+          state: this.state,
+          toggleExpandCollapse: () => {
+            this.setState({ isOpen: !this.state.isOpen });
+            //TODO: this is a bit yuck and causes jank when clicking 'show less'
+            window.dispatchEvent(new Event("resize"));
+          },
+        }}
+      >
+        {this.props.children}
+      </EllipsisContext.Provider>
+    );
+  }
+}
+
+export const DefaultToggleButton = props => {
+  //TODO: spread other {...props} in, e.g. custom data attributes etc
+  return (
+    <button aria-hidden onClick={props.onClick} className={props.className}>
+      {props.children}
+    </button>
+  );
+};
+
 export default class Ellipsis extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      // canOverflow means that an ellipsis CAN show, based on content width/height.
+      // It may not be showing though, e.g. if expanded is toggled.
+      canOverflow: false,
+    };
     this.reflowEllipsis = this.debounce(
       this.reflowEllipsis.bind(this),
       SIXTY_FPS
     );
-    this.state = {
-      // needsTruncation: false,
-      showHideEnabled: false,
-      isOpen: !!this.props.openByDefault,
-    };
     this.reflowIfSizeChange = this.reflowIfSizeChange.bind(this);
     this.renderEllipsisAt = this.renderEllipsisAt.bind(this);
     this.moveEllipsis = this.moveEllipsis.bind(this);
@@ -26,6 +60,8 @@ export default class Ellipsis extends React.Component {
     this.ellipsisNode.setAttribute("aria-hidden", true);
     this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
     this.ellipsisNode.setAttribute("unselectable", "on"); // IE < 10 and Opera < 15 https://stackoverflow.com/a/4358620
+    this.ellipsisNode.className =
+      props.ellipsisClassName || DEFAULT_ELLIPSIS_CLASS;
     this.ellipsisNode.textContent = this.props.ellipsis || DEFAULT_ELLIPSIS;
     this.mutationWatcherMilliseconds = DEFAULT_MUTATION_WATCHER_MILLISECONDS;
   }
@@ -82,32 +118,41 @@ export default class Ellipsis extends React.Component {
       ) {
         this.mutationWatcherMilliseconds = MAX_MUTATION_WATCHER_MILLISECONDS;
       }
-      // console.log('Same scroll height.', this.mutationWatcherMilliseconds);
       return;
     }
+
     this.mutationWatcherMilliseconds = DEFAULT_MUTATION_WATCHER_MILLISECONDS;
-    // console.log(
-    //   'Scroll height change, so reflow',
-    //   this.containerScrollHeight,
-    //   'vs',
-    //   this.containerNode.scrollHeight,
-    //   this.mutationWatcherMilliseconds
-    // );
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
     this.containerScrollHeight = this.containerNode.scrollHeight;
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    return (
-      nextProps.children !== this.props.children || nextState !== this.nextState
-    );
+    return nextState.canOverflow !== this.state.canOverflow;
   }
+
+  hasOverflow = () => {
+    const viewableDifference = Math.abs(
+      (this.containerNode.scrollHeight - this.containerNode.clientHeight) / 2
+    );
+    // testing this rather than whether there's a height because any set height may be
+    // enough to contain the element, so really we need to check whether the element is
+    // fully visible
+    const noOverflow = viewableDifference < PIXEL_ROUNDING_BUFFER;
+    if (noOverflow) {
+      return false;
+    } else {
+      return true;
+    }
+  };
 
   reflowEllipsis() {
     if (!this.mounted) return;
     if (this.ellipsisNode.parentNode) {
+      this.setState({ canOverflow: true });
       this.containerNode.removeChild(this.ellipsisNode);
+    } else {
+      this.setState({ canOverflow: false });
     }
     if (this.timer) {
       clearTimeout(this.timer);
@@ -123,17 +168,9 @@ export default class Ellipsis extends React.Component {
       this.timer = setTimeout(this.moveEllipsis, SIXTY_FPS);
     }
 
-    const viewableDifference = Math.abs(
-      (this.containerNode.scrollHeight - this.containerNode.clientHeight) / 2
-    );
-    // testing this rather that whether there's a height because any set height may be
-    // enough to contain the element, so really we need to check whether the element is
-    // fully visible
-    const noOverflow = viewableDifference < PIXEL_ROUNDING_BUFFER;
-    if (noOverflow) {
-      // then just exit
-      return;
-    }
+    //there's no overflow, therefore no ellipsis to move
+    if (!this.hasOverflow()) return;
+
     if (this.ellipsisNode && this.ellipsisNode.parentNode) {
       // because any character's height will include descenders (y how the tail goes below the line) to the
       // tallest letter, but an ellipsis is somewhere in the middle so we don't care if the descender area
@@ -148,6 +185,7 @@ export default class Ellipsis extends React.Component {
 
       if (ellipsisVisible) {
         // job done. stop.
+        this.setState({ canOverflow: true });
         return;
       }
     }
@@ -190,23 +228,20 @@ export default class Ellipsis extends React.Component {
     );
   }
 
-  toggleOpenState = () => {
-    this.setState({ isOpen: !this.state.isOpen });
-  };
-
   render() {
     const {
       children,
       className,
       style,
-      customButton,
       showToggleButton,
-      clickToToggle,
+      customButton,
+      clickTextToToggle,
       showMoreText,
       showLessText,
     } = this.props;
 
-    const { isOpen } = this.state;
+    const { canOverflow } = this.state;
+
     const showMoreLabel = showMoreText || "Show more";
     const showLessLabel = showLessText || "Show less";
 
@@ -216,44 +251,58 @@ export default class Ellipsis extends React.Component {
     }
 
     return (
-      <Fragment>
-        <div
-          ref={containerNode => {
-            this.containerNode = containerNode;
-          }}
-          onClick={clickToToggle && this.toggleOpenState}
-          className={className}
-          style={{
-            position: "relative", // needed to calculate location of child nodes
-            overflow: isOpen ? "visible" : "hidden",
-            height: isOpen ? "auto" : null,
-            ...style,
-          }}
-        >
-          {children}
-        </div>
-
-        {showToggleButton && (
+      <EllipsisContext.Consumer>
+        {context => (
           <Fragment>
-            {customButton ? (
-              customButton(
-                isOpen,
-                this.toggleOpenState,
-                showMoreText,
-                showLessText
-              )
-            ) : (
-              <button
-                onClick={this.toggleOpenState}
-                className="rae__toggle-btn"
-                aria-hidden
-              >
-                {isOpen ? showLessLabel : showMoreLabel}
-              </button>
+            <p>canOverflow: {canOverflow ? "yes" : "no"}</p>
+            <div
+              ref={containerNode => {
+                this.containerNode = containerNode;
+              }}
+              onClick={
+                !!(clickTextToToggle && canOverflow)
+                  ? context.toggleExpandCollapse
+                  : null
+              }
+              className={`${className} rae-text ${
+                context.state.isOpen ? "rae-text__open" : "rae-text__closed"
+              }`}
+              style={{
+                position: "relative", // needed to calculate location of child nodes
+                overflow: context.state.isOpen ? "visible" : "hidden",
+                height: context.state.isOpen ? "auto" : null,
+                ...style,
+              }}
+            >
+              {children}
+            </div>
+            {showToggleButton && canOverflow && (
+              <Fragment>
+                {customButton ? (
+                  customButton(
+                    context.state.isOpen,
+                    context.toggleExpandCollapse,
+                    showMoreLabel,
+                    showLessLabel
+                  )
+                ) : (
+                  <DefaultToggleButton
+                    isOpen={context.state.isOpen}
+                    onClick={context.toggleExpandCollapse}
+                    className={`rae-toggle-btn ${
+                      context.state.isOpen
+                        ? "rae-toggle-btn__open"
+                        : "rae-toggle-btn__closed"
+                    }`}
+                  >
+                    {context.state.isOpen ? showLessText : showMoreText}
+                  </DefaultToggleButton>
+                )}
+              </Fragment>
             )}
           </Fragment>
         )}
-      </Fragment>
+      </EllipsisContext.Consumer>
     );
   }
 }
