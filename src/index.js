@@ -8,6 +8,10 @@ const DEFAULT_MUTATION_WATCHER_MILLISECONDS = 15;
 const MAX_MUTATION_WATCHER_MILLISECONDS = 10000;
 
 export default class Ellipsis extends React.Component {
+  static defaultProps = {
+    tagName: 'div',
+  }
+
   constructor(props) {
     super(props);
     this.reflowEllipsis = this.debounce(
@@ -184,27 +188,25 @@ export default class Ellipsis extends React.Component {
   }
 
   render() {
-    const { children, className, style } = this.props;
+    const { tagName, children, className, style } = this.props;
 
     if (this.offset !== undefined) {
       if (this.timer) clearTimeout(this.timer);
       this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
     }
 
-    return (
-      <div
-        ref={containerNode => {
-          this.containerNode = containerNode;
-        }}
-        className={className}
-        style={{
+    return React.createElement(
+      tagName, {
+        ref: containerNode => { this.containerNode = containerNode; },
+        className,
+        style: {
+          display: "block", // allow using tags that are inline by default
           position: "relative", // needed to calculate location of child nodes
           overflow: "hidden", // they can always override this with style if they have any niche use-cases for ellipsis and overflow: 'visible'
-          ...style
-        }}
-      >
-        {children}
-      </div>
-    );
+          ...style,
+        }
+      },
+      children,
+    )
   }
 }
