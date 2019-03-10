@@ -40,11 +40,6 @@ var Ellipsis = function (_React$Component) {
     _this.reflowIfSizeChange = _this.reflowIfSizeChange.bind(_this);
     _this.renderEllipsisAt = _this.renderEllipsisAt.bind(_this);
     _this.moveEllipsis = _this.moveEllipsis.bind(_this);
-    _this.ellipsisNode = document.createElement("span");
-    _this.ellipsisNode.setAttribute("aria-hidden", true);
-    _this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
-    _this.ellipsisNode.setAttribute("unselectable", "on"); // IE < 10 and Opera < 15 https://stackoverflow.com/a/4358620
-    _this.ellipsisNode.textContent = _this.props.ellipsis || DEFAULT_ELLIPSIS;
     _this.mutationWatcherMilliseconds = DEFAULT_MUTATION_WATCHER_MILLISECONDS;
     return _this;
   }
@@ -65,6 +60,12 @@ var Ellipsis = function (_React$Component) {
       this.containerScrollHeight = this.containerNode.scrollHeight;
       window.addEventListener("resize", this.reflowEllipsis);
       window.addEventListener("orientationchange", this.reflowEllipsis);
+
+      this.ellipsisNode = document.createElement("span");
+      this.ellipsisNode.setAttribute("aria-hidden", true);
+      this.ellipsisNode.style.userSelect = "none"; // disable text selection. Don't care about non-standard browser prefixes.
+      this.ellipsisNode.setAttribute("unselectable", "on"); // IE < 10 and Opera < 15 https://stackoverflow.com/a/4358620
+      this.ellipsisNode.textContent = this.props.ellipsis || DEFAULT_ELLIPSIS;
 
       // Fonts may load later and affect ellipsis placement.
       // This abandoned code might be useful in the future.
