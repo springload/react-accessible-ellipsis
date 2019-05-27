@@ -200,6 +200,7 @@ var Ellipsis = function (_React$Component) {
       var _this2 = this;
 
       var _props = this.props,
+          tagName = _props.tagName,
           children = _props.children,
           className = _props.className,
           style = _props.style;
@@ -210,23 +211,23 @@ var Ellipsis = function (_React$Component) {
         this.timer = setTimeout(this.reflowEllipsis, SIXTY_FPS);
       }
 
-      return _react2.default.createElement(
-        "div",
-        {
-          ref: function ref(containerNode) {
-            _this2.containerNode = containerNode;
-          },
-          className: className,
-          style: _extends({
-            position: "relative", // needed to calculate location of child nodes
-            overflow: "hidden" }, style)
+      return _react2.default.createElement(tagName, {
+        ref: function ref(containerNode) {
+          _this2.containerNode = containerNode;
         },
-        children
-      );
+        className: className,
+        style: _extends({
+          display: "block", // allow using tags that are inline by default
+          position: "relative", // needed to calculate location of child nodes
+          overflow: "hidden" }, style)
+      }, children);
     }
   }]);
 
   return Ellipsis;
 }(_react2.default.Component);
 
+Ellipsis.defaultProps = {
+  tagName: 'div'
+};
 exports.default = Ellipsis;
