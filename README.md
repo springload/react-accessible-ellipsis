@@ -46,6 +46,13 @@ or,
       <Ellipsis className="some-class-with-height"> any text you want lorem ipsum etc. </Ellipsis>
     )
 
+### Props
+
+- `ellipsis` (string): ellipsis indicating the text was truncated. Defaults to `...`.
+- `tagName` (string): tag to be used to contain the text. Defaults to `div`.
+- `className` (string): class name to use
+- `style` (React.CSSProperties): a [style object](https://reactjs.org/docs/dom-elements.html#style) for inline styling
+
 ## Troubleshooting
 
 ### Console error about `children.split` is not a function
