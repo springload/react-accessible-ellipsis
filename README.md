@@ -50,7 +50,7 @@ or,
 
 - `ellipsis` (string): ellipsis indicating the text was truncated. Defaults to `...`.
 - `tagName` (string): tag to be used to contain the text. Defaults to `div`.
-- `className` (string): class name to use
+- `className` (string): class to apply to element
 - `style` (React.CSSProperties): a [style object](https://reactjs.org/docs/dom-elements.html#style) for inline styling
 
 ## Troubleshooting
