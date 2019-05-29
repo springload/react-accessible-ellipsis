@@ -3,6 +3,7 @@
   "version": "2003.1.0",
   "description": "Visibly truncate multi-line text with an ellipsis... without causing accessibility problems!",
   "main": "./build/index.js",
+  "types": "./typescript.d.ts",
   "scripts": {
     "build": "babel src --out-file build/index.js",
     "prepublishOnly": "npm run build",
