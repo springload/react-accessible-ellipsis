@@ -21,8 +21,9 @@ To contrast `react-accessible-ellipsis` has:
 - **Better browser support than `text-overflow:ellipsis`:** this is a JavaScript solution that works everywhere React does.
 - **Arbitrary alignment:** this doesn't require `text-align: justify` and works with any text or font (variable width or fixed etc.).
 - **Tiny dependency:** 2kb (minified and gzipped)
+- **TypeScript**
 
-Please note that it only supports plaintext though, not HTML (the `children` node should just be one text node).
+Please note that it only supports plaintext though, not HTML (the `children` prop should just be one text node).
 
 ## Install
 
@@ -48,22 +49,26 @@ or,
 
 ### Props
 
-- `ellipsis` (string): ellipsis indicating the text was truncated. Defaults to `...`.
-- `tagName` (string): tag to be used to contain the text. Defaults to `div`.
-- `className` (string): class to apply to element
-- `style` (React.CSSProperties): a [style object](https://reactjs.org/docs/dom-elements.html#style) for inline styling
+- `children` (string, required): The string to add an ellipsis to.
+- `ellipsis` (string, optional): String indicating the text was truncated. Defaults to "" (U2026).
+- `className` (string, optional): class to apply to container element. Although optional either `className` or `style` should be used to restrict width or height.
+- `style` (React.CSSProperties AKA map/object, optional): a [style object](https://reactjs.org/docs/dom-elements.html#style) for inline styling. Although optional either `className` or `style` should be used to restrict width or height.
+- `tagName` (string, optional, default=`"div"`): tag to be used for container element. Defaults to `div`.
+- `pixelRoundingBuffer` (number, optional, default=`1.5`): Used internally to handle rounding errors in browser measurements. Browsers sometimes give measurement values in integers when they are infact fractional, and compounding math based on these integers can result in rounding errors and this prop is used to compare numbers within a certain threshold.
+- `ellipsisWithinCharacterBoxRatio` (number, optional, default=`0.9`). The ellipsis characters position within a character box (and therefore whether it's visible) can vary based on font.
+- `debug` (boolean, optional, default=`false`): whether to log debug info via `console.info()`.
 
-(thanks to @ldanet for these docs!)
+(thanks to [ldanet](https://github.com/ldanet) for these docs!)
 
 ## Troubleshooting
 
 ### Console error about `children.split` is not a function
 
-This gruesome sounding error means that you have multiple `children` nodes being passed to react-accessible-ellipsis, or non-plaintext children. Try joining them into a single string.. for example, rather than
+This gruesome sounding error means that you have multiple `children` nodes being passed to react-accessible-ellipsis, or non-plaintext children. Try joining them into a single string.. for example, don't do,
 
     <Ellipsis>{propText} some description {moreText}</Ellipsis>
 
-try passing in,
+do this instead,
 
     <Ellipsis>{`${propText} some description ${moreText}`}</Ellipsis>
 

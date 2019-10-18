@@ -34,28 +34,36 @@ function Ellipsis(props) {
         const hasOverflow = Math.abs(
         // Math.abs to ensure positive number
         containerElement.scrollHeight - containerElement.clientHeight) < pixelRoundingBuffer;
+        function ellipsisIsVisible() {
+            const ellipsisVisibleHeight = ellipsisElement.offsetHeight * ellipsisWithinCharacterBoxRatio;
+            const ellipsisTop = ellipsisElement
+                ? ellipsisElement.offsetTop + ellipsisVisibleHeight
+                : 0;
+            return ellipsisTop <= containerElement.offsetHeight;
+        }
         if (!hasOverflow) {
             if (debug) {
                 info(`(step 1) Container has overflow. About to add ellipsis. Offset ${offset}.`);
             }
             containerElement.appendChild(ellipsisElement);
             // Any ellipsis character's height will include space for descenders (eg with "y" how
-            // the tail goes below the line) even though an ellipsis doesn't have one, so we'll
-            // take the offsetHeight and divide by 3 and consider that to be visible.
-            function ellipsisIsVisible() {
-                const ellipsisVisibleHeight = ellipsisElement.offsetHeight * ellipsisWithinCharacterBoxRatio;
-                const ellipsisTop = ellipsisElement
-                    ? ellipsisElement.offsetTop + ellipsisVisibleHeight
-                    : 0;
-                return ellipsisTop <= containerElement.offsetHeight;
-            }
+            // the tail goes below the line) even though an ellipsis doesn't have one
             function nextWhitespace(offset, children) {
                 const reversedOffset = reverseChildren.indexOf(" ", reverseChildren.length - offset + 1);
                 return reversedOffset !== -1
                     ? reverseChildren.length - reversedOffset - 1
                     : -1;
             }
-            if (!ellipsisIsVisible()) {
+            if (ellipsisIsVisible()) {
+                // if it's immediately visible then it's likely that
+                // the container overflow is only a few pixels, so we should remove the
+                // ellipsis
+                containerElement.removeChild(ellipsisElement);
+                if (debug) {
+                    info("(step 2) Ellipsis is visible on first move. Removing ellipsis and stopping.");
+                }
+            }
+            else {
                 function moveEllipsis() {
                     if (typeof children !== "string")
                         throw Error(CHILDREN_STRING_ERROR);
@@ -75,7 +83,7 @@ function Ellipsis(props) {
                     containerElement.appendChild(document.createTextNode(children.substring(offset)));
                     if (!ellipsisIsVisible()) {
                         if (debug)
-                            info(`(step 2) Ellipsis not yet visible. Offest ${offset}. Recursing...`);
+                            info(`(step 2) Ellipsis not yet visible. Offset ${offset}. Recursing...`);
                         timer = requestAnimationFrame(moveEllipsis);
                     }
                     else {
@@ -84,9 +92,6 @@ function Ellipsis(props) {
                     }
                 }
                 timer = requestAnimationFrame(moveEllipsis);
-            }
-            else if (debug) {
-                info("(step 2) Ellipsis is visible. Stopping.");
             }
         }
         else if (debug) {
@@ -136,7 +141,7 @@ function info(...args) {
     console.info("react-accessible-ellipsis", ...args);
 }
 const DEFAULT_ELLIPSIS = "\u2026";
-const DEFAULT_PIXEL_ROUNDING_BUFFER = 1.5; // Browsers sometimes calculate heights of DOM elements, or scrollHeight, by rounding up to nearest integer... so to compare for 'equality' we use this constant to find near numbers.
+const DEFAULT_PIXEL_ROUNDING_BUFFER = 1.5; // Browsers sometimes calculate heights of DOM elements, or scrollHeight, by rounding up to nearest integer... so we need a certain threshold to compare similarly sized things
 const CHILDREN_STRING_ERROR = "The 'children' prop of react-accessible-ellipsis must be a single string. If interpolating props put them in a single template string (eg) <Ellipsis>{`${prop1} words ${prop2}`}</Ellipsis>";
-const DEFAULT_ELLIPSIS_WITHIN_CHARACTER_BOX_RATIO = 0.9; // vertical ratio within offsetHeight that we think the ellipsis is visible. Ie, 0.9 means even if 0.1 of the bottom of the character box is cut off then it's still visible. Varies by font.
+const DEFAULT_ELLIPSIS_WITHIN_CHARACTER_BOX_RATIO = 1; // vertical ratio within offsetHeight that we think the ellipsis is visible. Ie, 0.9 means even if 0.1 of the bottom of the character box is cut off then it's still visible. Varies by font.
 //# sourceMappingURL=index.js.map
