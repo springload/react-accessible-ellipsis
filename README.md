@@ -4,14 +4,14 @@ Truncate multiline with an ellipsis... without causing accessibility problems!
 
 ## Why?
 
-For visual reasons it can be informative to show that text has been truncated with an ellipsis character "..." such as
+For visual reasons it can be informative to show that text has been truncated with an ellipsis character "…" such as
 
-    It was the best of times,...
+    It was the best of times…
 
 However browser support for `text-overflow:ellipsis` is poor, especially on multiline text.
 
     It was the best of times,
-    it was the blurst of...
+    it was the blurst of…
 
 There are a variety of JavaScript-based solutions that aim to solve this but they either have poor accessibility or poor browser support, or they require `text-align: justify`.
 
@@ -50,7 +50,7 @@ or,
 ### Props
 
 - `children` (string, required): The string to add an ellipsis to.
-- `ellipsis` (string, optional): String indicating the text was truncated. Defaults to "" (U2026).
+- `ellipsis` (string, optional): String indicating the text was truncated. Defaults to "…" (U2026).
 - `className` (string, optional): class to apply to container element. Although optional either `className` or `style` should be used to restrict width or height.
 - `style` (React.CSSProperties AKA map/object, optional): a [style object](https://reactjs.org/docs/dom-elements.html#style) for inline styling. Although optional either `className` or `style` should be used to restrict width or height.
 - `tagName` (string, optional, default=`"div"`): tag to be used for container element. Defaults to `div`.
