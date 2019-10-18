@@ -1,11 +1,12 @@
 {
   "name": "react-accessible-ellipsis",
-  "version": "2003.1.0",
+  "version": "2005.1.0",
   "description": "Visibly truncate multi-line text with an ellipsis... without causing accessibility problems!",
   "main": "./build/index.js",
   "scripts": {
-    "build": "babel src --out-file build/index.js",
-    "prepublishOnly": "npm run build",
+    "build": "tsc",
+    "babel-build": "babel src --out-file build/index.js --extensions \".tsx\"",
+    "prepublishOnly": "yarn build",
     "test": "jest"
   },
   "repository": {
@@ -22,51 +23,29 @@
     "a11y",
     "react",
     "text-overflow",
+    "overflow",
     "ie11"
   ],
   "author": "Matthew Holloway",
   "license": "ISC",
   "devDependencies": {
-    "babel-cli": "^6.24.1",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-plugin-transform-react-jsx": "^6.24.1",
-    "babel-preset-env": "^1.6.0",
-    "babel-preset-flow": "^6.23.0",
-    "babel-preset-react": "^6.24.1",
-    "babel-register": "^6.26.0",
-    "benchmark": "^2.1.4",
-    "jest": "^21.0.2",
-    "memwatch-next": "^0.3.0",
-    "react": ">15",
-    "react-test-renderer": ">15"
+    "@babel/cli": "^7.6.4",
+    "@babel/preset-react": "^7.6.3",
+    "@babel/preset-typescript": "^7.6.0",
+    "@types/react": "^16.9.9",
+    "jest": "^24.9.0",
+    "react": "^16.10.2",
+    "react-dom": "^16.10.2",
+    "typescript": "^3.6.4"
   },
   "peerDependencies": {
-    "react": ">15"
+    "react": ">16.8",
+    "react-dom": ">16.8"
   },
   "babel": {
     "presets": [
-      "flow",
-      [
-        "env",
-        {
-          "targets": {
-            "node": "3"
-          }
-        }
-      ],
-      "react"
-    ],
-    "plugins": [
-      [
-        "transform-class-properties"
-      ],
-      [
-        "transform-react-jsx"
-      ],
-      [
-        "transform-object-rest-spread"
-      ]
+      "@babel/typescript",
+      "@babel/react"
     ]
   }
 }
