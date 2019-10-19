@@ -53,9 +53,9 @@ or,
 - `ellipsis` (string, optional): String indicating the text was truncated. Defaults to "…" (U2026).
 - `className` (string, optional): class to apply to container element. Although optional either `className` or `style` should be used to restrict width or height.
 - `style` (React.CSSProperties AKA map/object, optional): a [style object](https://reactjs.org/docs/dom-elements.html#style) for inline styling. Although optional either `className` or `style` should be used to restrict width or height.
-- `tagName` (string, optional, default=`"div"`): tag to be used for container element. Defaults to `div`.
+- `tagName` (string, optional, default=`"div"`): tag to be used for container element.
 - `pixelRoundingBuffer` (number, optional, default=`1.5`): Used internally to handle rounding errors in browser measurements. Browsers sometimes give measurement values in integers when they are infact fractional, and math based on these integers can result in rounding errors. This prop is used to compare numbers within a certain threshold.
-- `ellipsisWithinCharacterBoxRatio` (number, optional, default=`1`). The ellipsis characters position within a character box (and therefore whether it's visible) can vary based on font.
+- `ellipsisWithinCharacterBoxRatio` (number, optional, default=`1`). The ellipsis characters position within a character box (and therefore whether it's visible) can vary based on font. Previous releases of `react-accessible-ellipsis` had a default of `ellipsisWithinCharacterBoxRatio={0.5}` so if you want the previous behaviour set this prop accordingly.
 - `debug` (boolean, optional, default=`false`): whether to log debug info via `console.info()`.
 
 (thanks to [ldanet](https://github.com/ldanet) for these docs!)
