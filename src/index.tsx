@@ -51,9 +51,6 @@ export default function Ellipsis(props: Props): ReactNode {
       ellipsisElement.setAttribute("unselectable", "on"); // IE < 10 and Opera < 15 https://stackoverflow.com/a/4358620
       ellipsisElement.textContent = ellipsis;
 
-      const clearAllElement = document.createElement("div");
-      clearAllElement.style.height = "1000px";
-
       let timer;
       let offset = children.length;
 
@@ -127,17 +124,26 @@ export default function Ellipsis(props: Props): ReactNode {
               document.createTextNode(children.substring(0, offset))
             );
             containerElement.appendChild(ellipsisElement);
-            containerElement.appendChild(clearAllElement);
-            containerElement.appendChild(
-              document.createTextNode(children.substring(offset))
-            );
+
+            const remainingText = document.createElement("span");
+            remainingText.style.cssText = `
+              position: absolute; /* Outside the DOM flow */
+              height: 1px;
+              width: 1px; /* Nearly collapsed */
+              overflow: hidden;
+              clip: rect(1px 1px 1px 1px); /* IE 7+ only support clip without commas */
+              clip: rect(1px, 1px, 1px, 1px); /* All other browsers */
+            `
+            remainingText.textContent = children.substring(offset);
+
+            containerElement.appendChild(remainingText);
 
             if (!ellipsisIsVisible()) {
               if (debug)
                 info(
                   `(step 2) Ellipsis not yet visible. Offset ${offset}. Recursing...`
                 );
-              timer = requestAnimationFrame(moveEllipsis);
+              moveEllipsis()
             } else {
               if (debug)
                 info(
@@ -145,7 +151,7 @@ export default function Ellipsis(props: Props): ReactNode {
                 );
             }
           }
-          timer = requestAnimationFrame(moveEllipsis);
+          moveEllipsis()
         }
       } else if (debug) {
         info(
