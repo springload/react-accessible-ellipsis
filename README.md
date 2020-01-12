@@ -35,17 +35,21 @@ Please note that it only supports plaintext though, not HTML (the `children` pro
 
 Put `<Ellipsis>` tags around your text, and ensure that it's only used within a component with a set height
 
-    import Ellipsis from 'react-accessible-ellipsis';
+```jsx
+import Ellipsis from 'react-accessible-ellipsis';
 
-    export default () => (
-      <Ellipsis style={{ height: '2em' }}> any text you want lorem ipsum etc. </Ellipsis>
-    )
+export default () => (
+  <Ellipsis style={{ height: '2em' }}> any text you want lorem ipsum etc. </Ellipsis>
+)
+```
 
 or,
 
-    export default () => (
-      <Ellipsis className="some-class-with-height"> any text you want lorem ipsum etc. </Ellipsis>
-    )
+```jsx
+export default () => (
+  <Ellipsis className="some-class-with-height"> any text you want lorem ipsum etc. </Ellipsis>
+)
+```
 
 ### Props
 
@@ -68,11 +72,15 @@ You either have multiple `children`, or non-string children.
 
 Try joining them into a single string.. for example, don't do this,
 
-    <Ellipsis>{propText} some description {moreText}</Ellipsis>
+```jsx
+<Ellipsis>{propText} some description {moreText}</Ellipsis>
+```
 
 Instead do this,
 
-    <Ellipsis>{`${propText} some description ${moreText}`}</Ellipsis>
+```jsx
+<Ellipsis>{`${propText} some description ${moreText}`}</Ellipsis>
+```
 
 (those are backticks aka [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals))
 
@@ -80,6 +88,8 @@ Instead do this,
 
 This is currently unsupported, however if you can detect when fonts load you can cause a rerender by using the `key` prop to force rerenders. ie,
 
-    <Ellipsis key={isFontLoaded}>some text</Ellipsis>
+```jsx
+<Ellipsis key={isFontLoaded}>some text</Ellipsis>
+```
 
 [Earlier versions of RAE supported detecting font loading](https://github.com/springload/react-accessible-ellipsis/blob/5b6dac3a2492ae1ce96ce587abe8cd07de3a1e50/src/index.js#L47) but this was quite computationally expensive, so this feature was removed because it's possible to support this by using `<Ellipsis>` with your own font loading logic. There are many libraries for detecting fonts loading (eg [FontFaceObserver](https://www.npmjs.com/package/fontfaceobserver)).
