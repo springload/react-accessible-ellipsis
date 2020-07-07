@@ -1,6 +1,6 @@
 {
   "name": "react-accessible-ellipsis",
-  "version": "2020",
+  "version": "2020.0.0",
   "description": "Just use CSS `-webkit-line-clamp` instead because even Firefox supports that despite the `-webkit-` prefix.",
   "repository": {
     "type": "git",
